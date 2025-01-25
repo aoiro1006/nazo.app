@@ -4,38 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Firebase ユーザー登録システム</title>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
-    <style>
-        body {
-            background-color: black;
-            color: white;
-            text-align: center;
-            font-family: Arial, sans-serif;
-        }
-        h1 { margin-top: 50px; }
-        input, button {
-            font-size: 18px;
-            padding: 10px;
-            margin-top: 10px;
-        }
-        #output { margin-top: 20px; font-size: 20px; }
-    </style>
-</head>
-<body>
+    <script type="module">
+        // Firebase SDK のモジュールをインポート
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 
-    <h1>ユーザー登録システム</h1>
-    
-    <input type="number" id="userId" placeholder="ID (1~100)" min="1" max="100">
-    <input type="text" id="userName" placeholder="なまえ">
-    <input type="text" id="teamName" placeholder="チーム名">
-    <button id="registerButton">登録</button>
-
-    <h2>登録済みユーザー</h2>
-    <div id="output"></div>
-
-    <script>
-        // 🔥 Firebase 設定（ここにコピーした情報を貼る）
+        // Firebaseの設定（Firebaseコンソールからコピー）
         const firebaseConfig = {
             apiKey: "YOUR_API_KEY",
             authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
@@ -47,62 +21,62 @@
         };
 
         // Firebaseを初期化
-        const app = firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
 
-        // ユーザー登録
+        // ユーザー登録処理
         function registerUser() {
-            let id = document.getElementById('userId').value.trim();
-            let name = document.getElementById('userName').value.trim();
-            let team = document.getElementById('teamName').value.trim();
-            let outputDiv = document.getElementById('output');
+            let userId = document.getElementById("userId").value;
+            let userName = document.getElementById("userName").value;
+            let teamName = document.getElementById("teamName").value;
 
-            if (!id || id < 1 || id > 100) {
-                outputDiv.textContent = "IDは1～100の間で入力してください。";
+            if (!userId || userId < 1 || userId > 100) {
+                alert("IDは1~100の間で設定してください");
                 return;
             }
 
-            if (!name || !team) {
-                outputDiv.textContent = "なまえとチーム名を入力してください。";
-                return;
-            }
-
-            // Firebaseにデータを保存
-            db.ref("users/" + id).set({
-                name: name,
-                team: team
+            set(ref(db, "users/" + userId), {
+                name: userName,
+                team: teamName
             }).then(() => {
-                outputDiv.textContent = `ID ${id} : ${name} (チーム: ${team}) を登録しました！`;
-                fetchUsers(); // 更新
+                alert("ユーザー登録成功！");
             }).catch((error) => {
-                outputDiv.textContent = "エラーが発生しました: " + error.message;
+                alert("エラー: " + error.message);
             });
         }
 
-        // 登録済みユーザーを取得
-        function fetchUsers() {
-            let outputDiv = document.getElementById('output');
-            outputDiv.innerHTML = "<p>登録済みユーザー一覧</p>";
-
-            db.ref("users").once("value", (snapshot) => {
-                let users = snapshot.val();
-                if (users) {
-                    Object.keys(users).forEach(id => {
-                        let user = users[id];
-                        outputDiv.innerHTML += `<p>ID ${id}: ${user.name} (チーム: ${user.team})</p>`;
-                    });
+        // 登録済みユーザーの取得
+        function fetchUser() {
+            let userId = document.getElementById("userId").value;
+            get(ref(db, "users/" + userId)).then((snapshot) => {
+                if (snapshot.exists()) {
+                    let data = snapshot.val();
+                    alert(`ID ${userId}：${data.name} (チーム: ${data.team})`);
                 } else {
-                    outputDiv.innerHTML += "<p>まだ登録されていません。</p>";
+                    alert("ユーザーが見つかりません");
                 }
+            }).catch((error) => {
+                alert("エラー: " + error.message);
             });
         }
 
-        document.getElementById('registerButton').addEventListener('click', registerUser);
+        // イベントリスナーを追加
+        document.addEventListener("DOMContentLoaded", function () {
+            document.getElementById("registerButton").addEventListener("click", registerUser);
+            document.getElementById("fetchButton").addEventListener("click", fetchUser);
+        });
 
-        // 初回ロード時にユーザー一覧を取得
-        fetchUsers();
     </script>
+</head>
+<body>
+
+    <h1>Firebase ユーザー登録システム</h1>
+    
+    <input type="number" id="userId" placeholder="ID (1~100)" min="1" max="100">
+    <input type="text" id="userName" placeholder="なまえ">
+    <input type="text" id="teamName" placeholder="チーム名">
+    <button id="registerButton">登録</button>
+    <button id="fetchButton">ユーザー取得</button>
 
 </body>
 </html>
-
