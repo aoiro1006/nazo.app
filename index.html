@@ -5,11 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Firebase ユーザー登録システム</title>
     <script type="module">
-        // Firebase SDK のモジュールをインポート
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
         import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 
-        // Firebaseの設定（Firebaseコンソールからコピー）
+        // Firebase 設定（Firebaseコンソールからコピー）
         const firebaseConfig = {
             apiKey: "YOUR_API_KEY",
             authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
@@ -20,11 +19,10 @@
             appId: "YOUR_APP_ID"
         };
 
-        // Firebaseを初期化
+        // Firebase 初期化
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // ユーザー登録処理
         function registerUser() {
             let userId = document.getElementById("userId").value;
             let userName = document.getElementById("userName").value;
@@ -45,7 +43,6 @@
             });
         }
 
-        // 登録済みユーザーの取得
         function fetchUser() {
             let userId = document.getElementById("userId").value;
             get(ref(db, "users/" + userId)).then((snapshot) => {
@@ -60,13 +57,36 @@
             });
         }
 
-        // イベントリスナーを追加
         document.addEventListener("DOMContentLoaded", function () {
             document.getElementById("registerButton").addEventListener("click", registerUser);
             document.getElementById("fetchButton").addEventListener("click", fetchUser);
+
+            // 🔹 バージョン番号を表示
+            document.getElementById("version").textContent = "ver 1.1";
         });
 
     </script>
+    <style>
+        body {
+            background-color: black;
+            color: white;
+            text-align: center;
+            font-family: Arial, sans-serif;
+        }
+        h1 { margin-top: 50px; }
+        input, button {
+            font-size: 18px;
+            padding: 10px;
+            margin-top: 10px;
+        }
+        #version {
+            position: fixed;
+            bottom: 5px;
+            right: 10px;
+            font-size: 12px;
+            color: gray;
+        }
+    </style>
 </head>
 <body>
 
@@ -78,5 +98,9 @@
     <button id="registerButton">登録</button>
     <button id="fetchButton">ユーザー取得</button>
 
+    <!-- 🔹 バージョン番号を小さく表示 -->
+    <div id="version"></div>
+
 </body>
 </html>
+
