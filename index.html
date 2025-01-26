@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Firebase ユーザー登録システム</title>
+    <title>謎解き入力システム</title>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-        import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+        import { getDatabase, ref, set, get, remove } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 
-        // Firebase 設定（Firebaseコンソールからコピー）
+        // Firebase 設定（Firebaseコンソールから取得）
         const firebaseConfig = {
             apiKey: "YOUR_API_KEY",
             authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
@@ -23,46 +23,65 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        function registerUser() {
-            let userId = document.getElementById("userId").value;
-            let userName = document.getElementById("userName").value;
-            let teamName = document.getElementById("teamName").value;
+        // コマンド処理関数
+        function processCommand() {
+            let inputText = document.getElementById("inputField").value.trim();
+            let outputDiv = document.getElementById("output");
 
-            if (!userId || userId < 1 || userId > 100) {
-                alert("IDは1~100の間で設定してください");
-                return;
+            if (inputText.startsWith("/add")) {
+                let parts = inputText.split(" ");
+                if (parts.length !== 4) {
+                    outputDiv.textContent = "⚠️ 形式: /add ID 名前 チーム";
+                    return;
+                }
+                let id = parts[1], name = parts[2], team = parts[3];
+
+                if (isNaN(id) || id < 1 || id > 100) {
+                    outputDiv.textContent = "⚠️ IDは1~100の間で入力してください。";
+                    return;
+                }
+
+                set(ref(db, "users/" + id), { name: name, team: team })
+                    .then(() => outputDiv.textContent = `✅ ユーザー追加: ID ${id} - ${name} (${team})`)
+                    .catch(error => outputDiv.textContent = "エラー: " + error.message);
+            }
+            else if (inputText.startsWith("/delete")) {
+                let parts = inputText.split(" ");
+                if (parts.length !== 2) {
+                    outputDiv.textContent = "⚠️ 形式: /delete ID";
+                    return;
+                }
+                let id = parts[1];
+
+                remove(ref(db, "users/" + id))
+                    .then(() => outputDiv.textContent = `🗑️ ID ${id} のユーザーを削除しました`)
+                    .catch(error => outputDiv.textContent = "エラー: " + error.message);
+            }
+            else if (inputText.startsWith("/list")) {
+                get(ref(db, "users")).then(snapshot => {
+                    let users = snapshot.val();
+                    if (!users) {
+                        outputDiv.textContent = "📭 ユーザーはまだ登録されていません。";
+                        return;
+                    }
+                    outputDiv.innerHTML = "<b>📋 ユーザー一覧:</b><br>";
+                    Object.keys(users).forEach(id => {
+                        outputDiv.innerHTML += `ID ${id}: ${users[id].name} (${users[id].team})<br>`;
+                    });
+                }).catch(error => outputDiv.textContent = "エラー: " + error.message);
+            }
+            else {
+                outputDiv.textContent = "⚠️ 不明なコマンドです";
             }
 
-            set(ref(db, "users/" + userId), {
-                name: userName,
-                team: teamName
-            }).then(() => {
-                alert("ユーザー登録成功！");
-            }).catch((error) => {
-                alert("エラー: " + error.message);
-            });
+            document.getElementById("inputField").value = ""; // 入力欄クリア
         }
 
-        function fetchUser() {
-            let userId = document.getElementById("userId").value;
-            get(ref(db, "users/" + userId)).then((snapshot) => {
-                if (snapshot.exists()) {
-                    let data = snapshot.val();
-                    alert(`ID ${userId}：${data.name} (チーム: ${data.team})`);
-                } else {
-                    alert("ユーザーが見つかりません");
-                }
-            }).catch((error) => {
-                alert("エラー: " + error.message);
-            });
-        }
-
+        // エンターキーでコマンド実行
         document.addEventListener("DOMContentLoaded", function () {
-            document.getElementById("registerButton").addEventListener("click", registerUser);
-            document.getElementById("fetchButton").addEventListener("click", fetchUser);
-
-            // 🔹 バージョン番号を表示
-            document.getElementById("version").textContent = "ver 1.1";
+            document.getElementById("inputField").addEventListener("keypress", function(event) {
+                if (event.key === "Enter") processCommand();
+            });
         });
 
     </script>
@@ -74,10 +93,17 @@
             font-family: Arial, sans-serif;
         }
         h1 { margin-top: 50px; }
-        input, button {
+        input {
             font-size: 18px;
             padding: 10px;
-            margin-top: 10px;
+            margin-top: 20px;
+            width: 250px;
+            text-align: center;
+        }
+        #output {
+            margin-top: 20px;
+            font-size: 18px;
+            white-space: pre-line;
         }
         #version {
             position: fixed;
@@ -90,17 +116,13 @@
 </head>
 <body>
 
-    <h1>Firebase ユーザー登録システム</h1>
+    <h1>謎解き入力システム</h1>
     
-    <input type="number" id="userId" placeholder="ID (1~100)" min="1" max="100">
-    <input type="text" id="userName" placeholder="なまえ">
-    <input type="text" id="teamName" placeholder="チーム名">
-    <button id="registerButton">登録</button>
-    <button id="fetchButton">ユーザー取得</button>
+    <input type="text" id="inputField" placeholder="コマンドを入力 (例: /add 1 太郎 赤チーム)">
+    <div id="output"></div>
 
-    <!-- 🔹 バージョン番号を小さく表示 -->
-    <div id="version"></div>
+    <!-- バージョン情報 -->
+    <div id="version">ver 1.2</div>
 
 </body>
 </html>
-
